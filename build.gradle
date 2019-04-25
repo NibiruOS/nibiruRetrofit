@@ -1,0 +1,102 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+    maven {
+        url "https://oss.sonatype.org/content/groups/staging/"
+    }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/google-snapshots/"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+project.ext {
+    nibiruId = 'nibiruRetrofit'
+}
+
+version = '1.0.0-SNAPSHOT'
+group = 'io.github.nibiruos.retrofit'
+
+sourceCompatibility = 1.8
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+tasks.withType(Javadoc) {
+    // Workaround for https://github.com/gradle/gradle/issues/5630
+    (options as CoreJavadocOptions).addStringOption("sourcepath", "")
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            pom {
+                name = 'Nibiru ' + project.name
+                description = 'Nibiru Mobile - Retrofit 2 integration.'
+                url = 'https://github.com/NibiruOS/' + nibiruId + '/tree/master/' + project.name
+                licenses {
+                    license {
+                        name = 'The Apache Software License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'lbrasseur'
+                        name = 'Lautaro Brasseur'
+                        email = 'lbrasseur@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'https://github.com/NibiruOS/' + nibiruId + '.git'
+                    developerConnection = 'https://github.com/NibiruOS/' + nibiruId + '.git'
+                    url = 'https://github.com/NibiruOS/' + nibiruId
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                username = sonatypeUser
+                password = sonatypePassword
+            }
+            url version.endsWith('SNAPSHOT') ? 'https://oss.sonatype.org/content/repositories/snapshots' : 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
+
+javadoc.classpath = sourceSets.main.compileClasspath
+
+dependencies {
+    compile "io.github.nibiruos.ui:org.nibiru.ui.core:1.0.1"
+	compile "com.squareup.retrofit2:retrofit:2.5.0"
+}
